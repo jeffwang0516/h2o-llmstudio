@@ -44,7 +44,8 @@ cd h2o-llmstudio
 git checkout v0.1.0
 
 # Set the desired port for the Wave server
-export H2O_WAVE_LISTEN=":80"
+export H2O_WAVE_LISTEN=":5432"
+export H2O_WAVE_ADDRESS='http://127.0.0.1:5432'
 
 # Create virtual environment (pipenv)
 make setup
