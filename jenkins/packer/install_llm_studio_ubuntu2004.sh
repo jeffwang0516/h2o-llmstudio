@@ -37,18 +37,26 @@ sudo apt-get -y update
 sudo apt-get install -y nvidia-container-runtime
 rm cuda-repo-ubuntu2004-*.deb
 
+echo "Clone llm studio"
 
 # Clone h2o-llmstudio
 git clone https://github.com/h2oai/h2o-llmstudio.git
 cd h2o-llmstudio
+
 git checkout v0.1.0
 
-# Set the desired port for the Wave server
-export H2O_WAVE_LISTEN=":5432"
-export H2O_WAVE_ADDRESS='http://127.0.0.1:5432'
 
-# Create virtual environment (pipenv)
-make setup
+echo "Create the script.sh file with the desired commands"
+
+printf '#!/bin/bash\n\n' > script.sh
+printf 'export H2O_WAVE_LISTEN=":80"\n' >> script.sh
+printf 'export H2O_WAVE_ADDRESS="http://127.0.0.1:80"\n\n' >> script.sh
+printf 'make setup\n' >> script.sh
+printf 'make lmstudio\n' >> script.sh
+
+# Make the script.sh file executable
+chmod +x script.sh
+
 
 # Running application as a service in systemd
 cd /etc/systemd/system
@@ -63,7 +71,7 @@ After=network.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/h2o-llmstudio
-ExecStart=/usr/bin/make llmstudio
+ExecStart=/usr/bin/script.sh
 Restart=always
 [Install]
 WantedBy=multi-user.target
