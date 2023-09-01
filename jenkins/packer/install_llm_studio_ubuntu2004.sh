@@ -71,7 +71,7 @@ After=network.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/h2o-llmstudio
-ExecStart=/usr/bin/script.sh
+ExecStart=bash /home/ubuntu/h2o-llmstudio/script.sh
 Restart=always
 [Install]
 WantedBy=multi-user.target
