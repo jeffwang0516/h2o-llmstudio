@@ -104,6 +104,7 @@ server {
 printf """
 ip=\$(dig +short myip.opendns.com @resolver1.opendns.com)
 sed \"s/<|_SUBST_PUBLIC_IP|>;/\$ip;/g\" /home/ubuntu/temp.conf  > /etc/nginx/conf.d/llm.conf
+sudo systemctl enable nginx
 """ > run_nginx.sh
 
 sudo chmod u+x run_nginx.sh
@@ -126,6 +127,7 @@ WantedBy=multi-user.target
 
 sudo systemctl daemon-reload
 sudo systemctl restart nginx
+sudo systemctl restart llm_studio.service
 
 
 
