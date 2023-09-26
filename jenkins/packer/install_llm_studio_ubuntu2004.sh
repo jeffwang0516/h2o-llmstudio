@@ -104,6 +104,7 @@ server {
 printf """
 ip=\$(dig +short myip.opendns.com @resolver1.opendns.com)
 sed \"s/<|_SUBST_PUBLIC_IP|>;/\$ip;/g\" /home/ubuntu/temp.conf  > /etc/nginx/conf.d/llm.conf
+sudo systemctl enable nginx.service
 sudo systemctl restart nginx.service
 """ > run_nginx.sh
 
