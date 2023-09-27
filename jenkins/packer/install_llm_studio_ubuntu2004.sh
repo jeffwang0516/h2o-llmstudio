@@ -63,7 +63,7 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/h2o-llmstudio
 ExecStart=/usr/bin/make llmstudio
-Restart=always
+
 [Install]
 WantedBy=multi-user.target
 """ >> llm_studio.service
@@ -104,7 +104,7 @@ server {
 printf """
 ip=\$(dig +short myip.opendns.com @resolver1.opendns.com)
 sed \"s/<|_SUBST_PUBLIC_IP|>;/\$ip;/g\" /home/ubuntu/temp.conf  > /etc/nginx/conf.d/llm.conf
-sudo systemctl enable nginx.service
+sleep 50
 sudo systemctl restart nginx.service
 """ > run_nginx.sh
 
@@ -121,7 +121,7 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu
 ExecStart=bash /home/ubuntu/run_nginx.sh
-Restart=always
+
 [Install]
 WantedBy=multi-user.target
 """ > llm_nginx.service
