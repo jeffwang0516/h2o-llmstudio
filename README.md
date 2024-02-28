@@ -262,4 +262,3 @@ We are happy to accept contributions to the H2O LLM Studio project. Please refer
 ## License
 
 H2O LLM Studio is licensed under the Apache 2.0 license. Please see the [LICENSE](LICENSE) file for more information.
-
