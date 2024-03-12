@@ -148,7 +148,9 @@ def load_model_weights(
 ):
     orig_num_items = len(model_weights)
     model_state_dict = model.state_dict()
-
+    logger.info(cfg.architecture.backbone_dtype)
+    logger.info(model_state_dict.keys())
+    logger.info(model_weights.keys())
     # needed to load models trained in int4/int8 with other dtypes
     model_weights = {
         k: v

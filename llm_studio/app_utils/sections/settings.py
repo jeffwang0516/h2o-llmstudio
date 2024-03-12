@@ -100,7 +100,21 @@ async def settings(q: Q) -> None:
             ui.separator("Default Connector Settings"),
             ui.inline(
                 items=[
-                    ui.label("AWS S3 bucket name", width=label_width),
+                    ui.label("S3 compatible endpoint", width=label_width),
+                    ui.textbox(
+                        name="default_s3_endpoint_url",
+                        label=None,
+                        value=q.client["default_s3_endpoint_url"],
+                        width=textbox_width,
+                        password=False,
+                        trigger=False,
+                        tooltip="Optional S3-compatible endpoint.",
+                    ),
+                ]
+            ),
+            ui.inline(
+                items=[
+                    ui.label("S3 bucket/folder path", width=label_width),
                     ui.textbox(
                         name="default_aws_bucket_name",
                         label=None,
@@ -114,7 +128,7 @@ async def settings(q: Q) -> None:
             ),
             ui.inline(
                 items=[
-                    ui.label("AWS access key", width=label_width),
+                    ui.label("S3 access key", width=label_width),
                     ui.textbox(
                         name="default_aws_access_key",
                         label=None,
@@ -129,7 +143,7 @@ async def settings(q: Q) -> None:
             ),
             ui.inline(
                 items=[
-                    ui.label("AWS secret key", width=label_width),
+                    ui.label("S3 secret key", width=label_width),
                     ui.textbox(
                         name="default_aws_secret_key",
                         label=None,

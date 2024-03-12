@@ -19,8 +19,7 @@ def get_size(x):
     except Exception:
         return 2**31
 
-
-version = "1.3.1"
+version = "1.3.1-dev-s3"
 
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -36,7 +35,7 @@ url = f"http://{host}:{port}/"
 
 default_cfg = {
     "url": url,
-    "name": "H2O LLM Studio",
+    "name": "",
     "version": version,
     "github": "https://github.com/h2oai/h2o-llmstudio",
     "min_experiment_disk_space": get_size(
@@ -90,6 +89,7 @@ default_cfg = {
         "default_aws_bucket_name": f"{os.getenv('AWS_BUCKET', 'bucket_name')}",
         "default_aws_access_key": os.getenv("AWS_ACCESS_KEY_ID", ""),
         "default_aws_secret_key": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+        "default_s3_endpoint_url": os.getenv("AWS_S3_ENDPOINT_URL", ""),
         "default_azure_conn_string": "",
         "default_azure_container": "",
         "default_kaggle_username": "",

@@ -128,6 +128,10 @@ async def dataset_import(
             q.client["dataset/import/source"] is None
             or q.client["dataset/import/source"] == "S3"
         ):
+            if q.client["dataset/import/s3_endpoint_url"] is None:
+                q.client["dataset/import/s3_endpoint_url"] = q.client[
+                    "default_s3_endpoint_url"
+                ]
             if q.client["dataset/import/s3_bucket"] is None:
                 q.client["dataset/import/s3_bucket"] = q.client[
                     "default_aws_bucket_name"
@@ -145,6 +149,7 @@ async def dataset_import(
                 q.client["dataset/import/s3_bucket"],
                 q.client["dataset/import/s3_access_key"],
                 q.client["dataset/import/s3_secret_key"],
+                q.client["dataset/import/s3_endpoint_url"],
             )
 
             if not files:
@@ -171,8 +176,17 @@ async def dataset_import(
 
             items += [
                 ui.textbox(
+                    name="dataset/import/s3_endpoint_url",
+                    label="S3 endpoint (Optional)",
+                    value=q.client["dataset/import/s3_endpoint_url"],
+                    trigger=False,
+                    required=False,
+                    password=False,
+                    tooltip="Optional S3-compatible endpoint",
+                ),
+                ui.textbox(
                     name="dataset/import/s3_bucket",
-                    label="S3 bucket name",
+                    label="S3 bucket/folder path",
                     value=q.client["dataset/import/s3_bucket"],
                     trigger=True,
                     required=True,
@@ -180,7 +194,7 @@ async def dataset_import(
                 ),
                 ui.textbox(
                     name="dataset/import/s3_access_key",
-                    label="AWS access key",
+                    label="S3 access key",
                     value=q.client["dataset/import/s3_access_key"],
                     trigger=True,
                     required=True,
@@ -189,7 +203,7 @@ async def dataset_import(
                 ),
                 ui.textbox(
                     name="dataset/import/s3_secret_key",
-                    label="AWS secret key",
+                    label="S3 secret key",
                     value=q.client["dataset/import/s3_secret_key"],
                     trigger=True,
                     required=True,
@@ -381,6 +395,7 @@ async def dataset_import(
                         q.client["dataset/import/s3_filename"],
                         q.client["dataset/import/s3_access_key"],
                         q.client["dataset/import/s3_secret_key"],
+                        q.client["dataset/import/s3_endpoint_url"],
                     )
                 elif q.client["dataset/import/source"] == "Azure":
                     (
