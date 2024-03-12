@@ -14,7 +14,9 @@ import sys
 import time
 from distutils import util
 from typing import Any, Callable, Dict, Tuple
+import tempfile
 
+import fsspec
 import deepspeed
 import numpy as np
 import pandas as pd
@@ -63,6 +65,11 @@ from llm_studio.src.utils.modeling_utils import (
 from llm_studio.src.utils.utils import kill_ddp_processes, set_environment, set_seed
 
 logger = logging.getLogger(__name__)
+
+S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "http://127.0.0.1:32627")
+S3_ACCESSKEY = os.environ.get("S3_ACCESSKEY", "minioadmin")
+S3_SECRET = os.environ.get("S3_SECRET", "minioadmin")
+S3_REGION = os.environ.get("S3_REGION", "us-east-1")
 
 
 def run_eval(
@@ -410,6 +417,18 @@ def run_train(
     return val_loss, val_metric
 
 
+def load_data_from_s3(s3_dirpath, target_dirpath=None, storage_options=None):
+    if not s3_dirpath.startswith("s3://") or not s3_dirpath.endswith("/"):
+        raise ValueError("dir_path not a valid s3 dir path, s3://bucket/dir01/")
+
+    fs, _, _ = fsspec.get_fs_token_paths(s3_dirpath, storage_options=storage_options)
+    if not target_dirpath:
+        target_dirpath = tempfile.mkdtemp(prefix="model-")
+    fs.get(s3_dirpath, target_dirpath, True)
+
+    return target_dirpath
+
+
 def run(cfg: Any) -> None:
     """Runs the routine.
 
@@ -424,6 +443,27 @@ def run(cfg: Any) -> None:
         )
 
     os.makedirs(cfg.output_directory, exist_ok=True)
+
+    # check if llm_backbone from s3://
+    if cfg.llm_backbone.startswith("s3://"):
+        logger.info(
+            f"Loading model from {cfg.llm_backbone} "
+            f"endpoint_url: {S3_ENDPOINT} "
+            f"access_key: {S3_ACCESSKEY} "
+        )
+        storage_options = {
+            "protocol": "s3",
+            "endpoint_url": S3_ENDPOINT,
+            "key": S3_ACCESSKEY,
+            "secret": S3_SECRET,
+            "use_ssl": False,
+            "config_kwargs": {
+                "region_name": S3_REGION
+            }
+        }
+        llm_backbone = os.path.join(cfg.llm_backbone, "") # make sure trailing slash
+        llm_local_path = load_data_from_s3(llm_backbone, storage_options=storage_options)
+        cfg.llm_backbone = llm_local_path
 
     # Force evaluation if user trains 0 epochs
     cfg.training.evaluate_before_training = (
