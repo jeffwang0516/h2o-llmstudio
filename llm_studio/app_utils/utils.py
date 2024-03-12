@@ -188,7 +188,7 @@ def clean_macos_artifacts(path: str) -> None:
             pass
 
 
-def s3_session(aws_access_key: str, aws_secret_key: str) -> Any:
+def s3_session(aws_access_key: str, aws_secret_key: str, endpoint_url: str = None) -> Any:
     """Establishes s3 session
 
     Args:
@@ -203,7 +203,7 @@ def s3_session(aws_access_key: str, aws_secret_key: str) -> Any:
     session = Session(
         aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key
     )
-    s3 = session.resource("s3")
+    s3 = session.resource("s3", endpoint_url=endpoint_url)
     # if no key is present, disable signing
     if aws_access_key == "" and aws_secret_key == "":
         s3.meta.client.meta.events.register("choose-signer.s3.*", disable_signing)
@@ -222,7 +222,7 @@ def filter_valid_files(files) -> List[str]:
 
 
 def s3_file_options(
-    bucket: str, aws_access_key: str, aws_secret_key: str
+    bucket: str, aws_access_key: str, aws_secret_key: str, endpoint_url: str = None
 ) -> Optional[List[str]]:
     """ "Returns all zip files in the target s3 bucket
 
@@ -235,7 +235,8 @@ def s3_file_options(
         List of zip files in bucket or None in case of access error
 
     """
-
+    if not endpoint_url:
+        endpoint_url = None
     try:
         bucket = bucket.replace("s3://", "")
         if bucket[-1] == os.sep:
@@ -243,7 +244,7 @@ def s3_file_options(
 
         bucket_split = bucket.split(os.sep)
         bucket = bucket_split[0]
-        s3 = s3_session(aws_access_key, aws_secret_key)
+        s3 = s3_session(aws_access_key, aws_secret_key, endpoint_url)
         s3_bucket = s3.Bucket(bucket)
 
         folder = "/".join(bucket_split[1:])
@@ -366,7 +367,7 @@ def extract_if_zip(file, actual_path):
 
 
 async def s3_download(
-    q, bucket, filename, aws_access_key, aws_secret_key
+    q, bucket, filename, aws_access_key, aws_secret_key, endpoint_url: str = None
 ) -> Tuple[str, str]:
     """Downloads a file from s3
 
@@ -380,13 +381,15 @@ async def s3_download(
     Returns:
         Download location path
     """
+    if not endpoint_url:
+        endpoint_url = None
     bucket = bucket.replace("s3://", "")
     if bucket[-1] == os.sep:
         bucket = bucket[:-1]
 
     bucket = bucket.split(os.sep)[0]
 
-    s3 = s3_session(aws_access_key, aws_secret_key)
+    s3 = s3_session(aws_access_key, aws_secret_key, endpoint_url)
 
     file, s3_path = s3_download_coroutine(q, filename)
 
@@ -1735,6 +1738,19 @@ def start_experiment(cfg: Any, q: Q, pre: str, gpu_list: Optional[List] = None) 
             {"HUGGINGFACE_TOKEN": q.client["default_huggingface_api_token"]}
         )
 
+    if q.client["default_s3_endpoint_url"]:
+        env_vars.update(
+            {
+                "S3_ENDPOINT": q.client["default_s3_endpoint_url"]
+            }
+        )
+    if q.client["default_aws_access_key"]:
+        env_vars.update(
+            {
+                "S3_ACCESSKEY": q.client["default_aws_access_key"],
+                "S3_SECRET": q.client["default_aws_secret_key"],
+            }
+        )
     env_vars = {k: v or "" for k, v in env_vars.items()}
 
     cfg = copy_config(cfg, q)
