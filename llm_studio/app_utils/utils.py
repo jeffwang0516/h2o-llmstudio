@@ -21,6 +21,7 @@ from contextlib import closing
 from functools import partial
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, Union
 
+import fsspec
 import GPUtil
 import numpy as np
 import pandas as pd
@@ -262,6 +263,38 @@ def s3_file_options(
     except Exception as e:
         logger.warning(f"Can't load S3 datasets list: {e}")
         return None
+
+
+def s3_file_upload(
+    file_to_upload: str, target_s3_dirpath: str, aws_access_key: str, aws_secret_key: str, endpoint_url: str = None, aws_region: str = "us-east-1"
+):
+    """ "Returns all zip files in the target s3 bucket
+
+    Args:
+        bucket: s3 bucket name
+        aws_access_key: s3 access key
+        aws_secret_key: s3 secret key
+
+    Returns:
+        List of zip files in bucket or None in case of access error
+
+    """
+    storage_options = {
+        "protocol": "s3",
+        "endpoint_url": endpoint_url,
+        "key": aws_access_key,
+        "secret": aws_secret_key,
+        "config_kwargs": {
+            "region_name": aws_region
+        }
+    }
+
+    if not target_s3_dirpath.startswith("s3://") or not target_s3_dirpath.endswith("/"):
+        raise ValueError("target_s3_dirpath not a valid s3 dir path, s3://bucket/dir01/")
+
+    fs, _, _ = fsspec.get_fs_token_paths(target_s3_dirpath, storage_options=storage_options)
+
+    fs.put(file_to_upload, target_s3_dirpath)
 
 
 def convert_file_size(size: float):
