@@ -43,6 +43,7 @@ from llm_studio.app_utils.utils import (
     remove_model_type,
     set_env,
     start_experiment,
+    s3_file_upload
 )
 from llm_studio.app_utils.wave_utils import busy_dialog, ui_table_from_df, wave_theme
 from llm_studio.python_configs.cfg_checks import check_config_for_errors
@@ -1020,6 +1021,13 @@ async def experiment_display(q: Q) -> None:
                 disabled=False,
                 tooltip=None,
             ),
+            ui.button(
+                name="experiment/display/push_to_s3",
+                label="Push checkpoint to s3",
+                primary=False,
+                disabled=False,
+                tooltip=None,
+            ),
         ]
 
     buttons += [ui.button(name="experiment/list/current", label="Back", primary=False)]
@@ -1828,6 +1836,182 @@ async def experiment_push_to_huggingface_dialog(q: Q, error: str = ""):
         items=dialog_items,
         closable=True,
         name="push_to_huggingface_dialog",
+    )
+
+    q.page["meta"].dialog = dialog
+    q.client["keep_meta"] = True
+
+
+async def experiment_push_to_s3_dialog(q: Q, error: str = ""):
+    if q.args["experiment/display/push_to_s3"] or error:
+        dialog_items = [
+            ui.message_bar("error", error, visible=True if error else False),
+            ui.textbox(
+                    name="experiment/display/push_to_s3/s3_endpoint_url",
+                    label="S3 endpoint (Optional)",
+                    value=q.client["default_s3_endpoint_url"],
+                    width="500px",
+                    required=False,
+                    password=False,
+                    tooltip="Optional S3-compatible endpoint",
+            ),
+            ui.textbox(
+                name="experiment/display/push_to_s3/s3_bucket",
+                label="S3 bucket/folder path",
+                value=q.client["default_aws_bucket_name"],
+                width="500px",
+                required=True,
+                tooltip="S3 bucket name including relative paths",
+            ),
+            ui.textbox(
+                name="experiment/display/push_to_s3/s3_access_key",
+                label="S3 access key",
+                value=q.client["default_aws_access_key"],
+                width="500px",
+                required=True,
+                password=True,
+                tooltip="AWS access key",
+            ),
+            ui.textbox(
+                name="experiment/display/push_to_s3/s3_secret_key",
+                label="S3 secret key",
+                value=q.client["default_aws_secret_key"],
+                width="500px",
+                required=True,
+                password=True,
+                tooltip="AWS secret key",
+            ),
+            ui.textbox(
+                name="experiment/display/push_to_s3/model_name",
+                label="Model Name",
+                value=hf_repo_friendly_name(
+                    q.client["experiment/display/experiment"].name
+                ),
+                width="500px",
+                required=True,
+                tooltip="The folder name under s3 bucket",
+            ),
+            ui.buttons(
+                [
+                    ui.button(
+                        name="experiment/display/push_to_s3_submit",
+                        label="Export",
+                        primary=True,
+                    ),
+                    ui.button(name="cancel", label="Cancel", primary=False),
+                ]
+            ),
+        ]
+    elif q.args["experiment/display/push_to_s3_submit"]:
+        s3_endpoint_url = q.client["experiment/display/push_to_s3/s3_endpoint_url"]
+        s3_access_key = q.client["experiment/display/push_to_s3/s3_access_key"]
+        s3_secret_key = q.client["experiment/display/push_to_s3/s3_secret_key"]
+        s3_bucket = q.client["experiment/display/push_to_s3/s3_bucket"]
+        experiment_path = q.client["experiment/display/experiment_path"]
+        model_name = q.client["experiment/display/push_to_s3/model_name"]
+
+        target_s3_dirpath = os.path.join(s3_bucket, model_name, "")
+        await busy_dialog(
+            q=q,
+            title=f"Exporting to S3: {target_s3_dirpath}",
+            text="Model size can affect the export time significantly.",
+        )
+
+        cfg = load_config_yaml(os.path.join(experiment_path, "cfg.yaml"))
+
+        device = "cuda"
+        experiments = get_experiments(q)
+        num_running_queued = len(
+            experiments[experiments["status"].isin(["queued", "running"])]
+        )
+        if num_running_queued > 0 or (
+            cfg.training.lora and cfg.architecture.backbone_dtype in ("int4", "int8")
+        ):
+            logger.info("Preparing model on CPU. This might slow down the progress.")
+            device = "cpu"
+        with set_env(HUGGINGFACE_TOKEN=q.client["default_huggingface_api_token"]):
+            cfg, model, tokenizer = load_cfg_model_tokenizer(
+                experiment_path, merge=True, device=device
+            )
+
+        model = unwrap_model(model)
+        checkpoint_path = cfg.output_directory
+
+        model_save_time = time.time()
+        model.backbone.save_pretrained(checkpoint_path)
+        # See PreTrainedTokenizerBase.save_pretrained for documentation
+        # Safeguard against None return if tokenizer class is
+        # not inherited from PreTrainedTokenizerBase
+        tokenizer_files = list(tokenizer.save_pretrained(checkpoint_path) or [])
+
+        card = get_model_card(cfg, model, repo_id="<path_to_local_folder>")
+        card.save(os.path.join(experiment_path, "model_card.md"))
+
+        FILES_TO_PUSH = [
+            "vocab.json",
+            "sentencepiece.bpe.model",
+            "bpe_encoder.bin",
+            "tokenizer_config.json",
+            "tokenizer.json",
+            "special_tokens_map.json",
+            "merges.txt",
+            "generation_config.json",
+            "config.json",
+            "added_tokens.json",
+            "model_card.md",
+            "classification_head.pth",
+        ]
+        FILES_TO_PUSH = set(
+            FILES_TO_PUSH
+            + [os.path.split(tokenizer_file)[-1] for tokenizer_file in tokenizer_files]
+        )
+
+        # Add tokenizer and config.json files, as well as potential classification head
+        paths_added = []
+        for file in FILES_TO_PUSH:
+            path = os.path.join(experiment_path, file)
+            if os.path.isfile(path):
+                paths_added.append(path)
+
+        # Add model weight files. save_pretrained() does not return the saved files
+        weight_paths = glob.glob(os.path.join(checkpoint_path, "pytorch_model*.*"))
+        for path in weight_paths:
+            paths_added.append(path)
+
+        # Add all files that were created after the model was saved.
+        # This is useful for potential changes/different
+        # naming conventions across different backbones.
+        for file in os.listdir(checkpoint_path):
+            file_path = os.path.join(checkpoint_path, file)
+            if (
+                os.path.getmtime(file_path) > model_save_time
+                and file_path not in paths_added
+            ):
+                paths_added.append(file_path)
+                logger.info(
+                    f"Added {file_path} as file to upload as it "
+                    "was created when saving the model state."
+                )
+
+        # Uploading to s3
+        for path in paths_added:
+            logger.info(f"Uploading {path} to {target_s3_dirpath}")
+            s3_file_upload(file_to_upload=path, target_s3_dirpath=target_s3_dirpath, aws_access_key=s3_access_key, aws_secret_key=s3_secret_key, endpoint_url=s3_endpoint_url)
+
+        dialog_items = [
+            ui.message_bar("success", "Success"),
+            ui.buttons(
+                [
+                    ui.button(name="ok", label="OK", primary=True),
+                ]
+            ),
+        ]
+
+    dialog = ui.dialog(
+        title="Push to S3",
+        items=dialog_items,
+        closable=True,
+        name="push_to_s3_dialog",
     )
 
     q.page["meta"].dialog = dialog
