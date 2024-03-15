@@ -28,6 +28,7 @@ from llm_studio.app_utils.sections.experiment import (
     experiment_download_predictions,
     experiment_list,
     experiment_push_to_huggingface_dialog,
+    experiment_push_to_s3_dialog,
     experiment_rename_ui_workflow,
     experiment_run,
     experiment_start,
@@ -311,6 +312,10 @@ async def handle(q: Q) -> None:
             await experiment_download_model(q)
         elif q.args["experiment/display/push_to_huggingface_submit"]:
             await experiment_push_to_huggingface_dialog(q)
+        elif q.args["experiment/display/push_to_s3"]:
+            await experiment_push_to_s3_dialog(q)
+        elif q.args["experiment/display/push_to_s3_submit"]:
+            await experiment_push_to_s3_dialog(q)
 
         elif q.args["experiment/display/config"]:
             await experiment_display(q)
