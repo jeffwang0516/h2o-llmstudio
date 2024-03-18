@@ -457,6 +457,12 @@ async def experiment_start(q: Q) -> None:
     logger.info(f"Config file: {q.client['experiment/start/cfg_file']}")
 
     option_items = get_ui_elements(cfg=q.client["experiment/start/cfg"], q=q)
+
+    for it in option_items:
+        if it.combobox and it.combobox.label == "LLM Backbone":
+            it.combobox.label = "LLM Backbone (Use s3://bucket/model-xxx/ to load model from s3)"
+            break
+
     items.extend(option_items)
 
     if q.client["experiment/start/cfg_mode/from_cfg"]:

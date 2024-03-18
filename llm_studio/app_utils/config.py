@@ -36,7 +36,7 @@ url = f"http://{host}:{port}/"
 
 default_cfg = {
     "url": url,
-    "name": "",
+    "name": "LLM finetuning tool",
     "version": version,
     "github": "https://github.com/h2oai/h2o-llmstudio",
     "min_experiment_disk_space": get_size(
