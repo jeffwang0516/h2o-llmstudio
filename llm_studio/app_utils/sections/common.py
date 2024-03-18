@@ -30,7 +30,7 @@ async def meta(q: Q) -> None:
     # TODO remove `stylesheet` when wave makes message bars smaller
     q.page["meta"] = ui.meta_card(
         box="",
-        title="H2O LLM Studio",
+        title="LLM finetune",
         layouts=[
             ui.layout(breakpoint="0px", width="1430px", zones=zones),
         ],
@@ -128,7 +128,7 @@ async def interface(q: Q) -> None:
         q.page["header"] = ui.header_card(
             box="header",
             title=default_cfg.name,
-            image=q.app["icon_path"],
+            # image=q.app["icon_path"],
             subtitle=f"v{default_cfg.version}",
         )
 
