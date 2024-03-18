@@ -2004,6 +2004,8 @@ async def experiment_push_to_s3_dialog(q: Q, error: str = ""):
             logger.info(f"Uploading {path} to {target_s3_dirpath}")
             s3_file_upload(file_to_upload=path, target_s3_dirpath=target_s3_dirpath, aws_access_key=s3_access_key, aws_secret_key=s3_secret_key, endpoint_url=s3_endpoint_url)
 
+        logger.info(f"Done. Uploaded to {target_s3_dirpath}")
+
         dialog_items = [
             ui.message_bar("success", "Success"),
             ui.buttons(
