@@ -462,7 +462,11 @@ def run(cfg: Any) -> None:
             }
         }
         llm_backbone = os.path.join(cfg.llm_backbone, "") # make sure trailing slash
-        llm_local_path = load_data_from_s3(llm_backbone, storage_options=storage_options)
+
+        target_dirpath_base = os.path.join(cfg.output_directory, "s3_models")
+        os.makedirs(target_dirpath_base, exist_ok=True)
+        target_dirpath = tempfile.mkdtemp(prefix="model-", dir=target_dirpath_base)
+        llm_local_path = load_data_from_s3(llm_backbone, target_dirpath=target_dirpath, storage_options=storage_options)
         cfg.llm_backbone = llm_local_path
 
     # Force evaluation if user trains 0 epochs
