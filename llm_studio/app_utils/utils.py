@@ -189,7 +189,7 @@ def clean_macos_artifacts(path: str) -> None:
             pass
 
 
-def s3_session(aws_access_key: str, aws_secret_key: str, endpoint_url: str = None) -> Any:
+def s3_session(aws_access_key: str, aws_secret_key: str, aws_region: str, endpoint_url: str = None) -> Any:
     """Establishes s3 session
 
     Args:
@@ -204,7 +204,7 @@ def s3_session(aws_access_key: str, aws_secret_key: str, endpoint_url: str = Non
     session = Session(
         aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key
     )
-    s3 = session.resource("s3", endpoint_url=endpoint_url)
+    s3 = session.resource("s3", endpoint_url=endpoint_url, region_name=aws_region)
     # if no key is present, disable signing
     if aws_access_key == "" and aws_secret_key == "":
         s3.meta.client.meta.events.register("choose-signer.s3.*", disable_signing)
@@ -223,7 +223,7 @@ def filter_valid_files(files) -> List[str]:
 
 
 def s3_file_options(
-    bucket: str, aws_access_key: str, aws_secret_key: str, endpoint_url: str = None
+    bucket: str, aws_access_key: str, aws_secret_key: str, aws_region: str, endpoint_url: str = None
 ) -> Optional[List[str]]:
     """ "Returns all zip files in the target s3 bucket
 
@@ -245,7 +245,7 @@ def s3_file_options(
 
         bucket_split = bucket.split(os.sep)
         bucket = bucket_split[0]
-        s3 = s3_session(aws_access_key, aws_secret_key, endpoint_url)
+        s3 = s3_session(aws_access_key, aws_secret_key, aws_region, endpoint_url)
         s3_bucket = s3.Bucket(bucket)
 
         folder = "/".join(bucket_split[1:])
@@ -404,7 +404,7 @@ def extract_if_zip(file, actual_path):
 
 
 async def s3_download(
-    q, bucket, filename, aws_access_key, aws_secret_key, endpoint_url: str = None
+    q, bucket, filename, aws_access_key, aws_secret_key, aws_region, endpoint_url: str = None
 ) -> Tuple[str, str]:
     """Downloads a file from s3
 
@@ -426,7 +426,7 @@ async def s3_download(
 
     bucket = bucket.split(os.sep)[0]
 
-    s3 = s3_session(aws_access_key, aws_secret_key, endpoint_url)
+    s3 = s3_session(aws_access_key, aws_secret_key, aws_region, endpoint_url)
 
     file, s3_path = s3_download_coroutine(q, filename)
 

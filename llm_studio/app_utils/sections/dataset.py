@@ -146,12 +146,17 @@ async def dataset_import(
                 q.client["dataset/import/s3_secret_key"] = q.client[
                     "default_aws_secret_key"
                 ]
+            if q.client["dataset/import/s3_region"] is None:
+                q.client["dataset/import/s3_region"] = q.client[
+                    "default_aws_region"
+                ]
 
             files = s3_file_options(
                 q.client["dataset/import/s3_bucket"],
                 q.client["dataset/import/s3_access_key"],
                 q.client["dataset/import/s3_secret_key"],
-                q.client["dataset/import/s3_endpoint_url"],
+                q.client["dataset/import/s3_region"],
+                q.client["dataset/import/s3_endpoint_url"]
             )
 
             if not files:
@@ -211,6 +216,15 @@ async def dataset_import(
                     required=True,
                     password=True,
                     tooltip="Optional AWS secret key; empty for anonymous access.",
+                ),
+                ui.textbox(
+                    name="dataset/import/s3_region",
+                    label="S3 region",
+                    value=q.client["dataset/import/s3_region"],
+                    trigger=True,
+                    required=True,
+                    password=False,
+                    tooltip="AWS region",
                 ),
                 ui_filename,
             ]
@@ -397,6 +411,7 @@ async def dataset_import(
                         q.client["dataset/import/s3_filename"],
                         q.client["dataset/import/s3_access_key"],
                         q.client["dataset/import/s3_secret_key"],
+                        q.client["dataset/import/s3_region"],
                         q.client["dataset/import/s3_endpoint_url"],
                     )
                 elif q.client["dataset/import/source"] == "Azure":
