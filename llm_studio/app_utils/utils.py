@@ -266,7 +266,7 @@ def s3_file_options(
 
 
 def s3_file_upload(
-    file_to_upload: str, target_s3_dirpath: str, aws_access_key: str, aws_secret_key: str, endpoint_url: str = None, aws_region: str = "us-east-1"
+    file_to_upload: str, target_s3_dirpath: str, aws_access_key: str, aws_secret_key: str, endpoint_url: str = None, aws_region: str = None
 ):
     """ "Returns all zip files in the target s3 bucket
 
@@ -285,11 +285,18 @@ def s3_file_upload(
         "protocol": "s3",
         "endpoint_url": endpoint_url,
         "key": aws_access_key,
-        "secret": aws_secret_key,
-        "config_kwargs": {
+        "secret": aws_secret_key
+    }
+
+    if aws_region is not None:
+        storage_options["config_kwargs"] = {
             "region_name": aws_region
         }
-    }
+
+    if endpoint_url and "s3.hicloud.net.tw" in endpoint_url:
+        storage_options["config_kwargs"] = {
+            "region_name": "us-east-1"
+        }
 
     if not target_s3_dirpath.startswith("s3://") or not target_s3_dirpath.endswith("/"):
         raise ValueError("target_s3_dirpath not a valid s3 dir path, s3://bucket/dir01/")
