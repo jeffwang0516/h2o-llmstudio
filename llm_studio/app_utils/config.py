@@ -90,6 +90,7 @@ default_cfg = {
         "default_aws_bucket_name": f"{os.getenv('AWS_BUCKET', 'bucket_name')}",
         "default_aws_access_key": os.getenv("AWS_ACCESS_KEY_ID", ""),
         "default_aws_secret_key": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+        "default_aws_region": os.getenv("AWS_REGION", "us-east-1"),
         "default_s3_endpoint_url": os.getenv("AWS_S3_ENDPOINT_URL", ""),
         "default_azure_conn_string": "",
         "default_azure_container": "",

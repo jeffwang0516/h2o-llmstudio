@@ -1888,6 +1888,15 @@ async def experiment_push_to_s3_dialog(q: Q, error: str = ""):
                 tooltip="AWS secret key",
             ),
             ui.textbox(
+                name="experiment/display/push_to_s3/s3_region",
+                label="S3 region",
+                value=q.client["default_aws_region"],
+                width="500px",
+                required=True,
+                password=False,
+                tooltip="AWS region",
+            ),
+            ui.textbox(
                 name="experiment/display/push_to_s3/model_name",
                 label="Model Name",
                 value=hf_repo_friendly_name(
@@ -1913,6 +1922,7 @@ async def experiment_push_to_s3_dialog(q: Q, error: str = ""):
         s3_access_key = q.client["experiment/display/push_to_s3/s3_access_key"]
         s3_secret_key = q.client["experiment/display/push_to_s3/s3_secret_key"]
         s3_bucket = q.client["experiment/display/push_to_s3/s3_bucket"]
+        s3_region = q.client["experiment/display/push_to_s3/s3_region"]
         experiment_path = q.client["experiment/display/experiment_path"]
         model_name = q.client["experiment/display/push_to_s3/model_name"]
 
@@ -2002,7 +2012,7 @@ async def experiment_push_to_s3_dialog(q: Q, error: str = ""):
         # Uploading to s3
         for path in paths_added:
             logger.info(f"Uploading {path} to {target_s3_dirpath}")
-            s3_file_upload(file_to_upload=path, target_s3_dirpath=target_s3_dirpath, aws_access_key=s3_access_key, aws_secret_key=s3_secret_key, endpoint_url=s3_endpoint_url)
+            s3_file_upload(file_to_upload=path, target_s3_dirpath=target_s3_dirpath, aws_access_key=s3_access_key, aws_secret_key=s3_secret_key, aws_region=s3_region, endpoint_url=s3_endpoint_url)
 
         logger.info(f"Done. Uploaded to {target_s3_dirpath}")
 

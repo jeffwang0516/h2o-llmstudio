@@ -288,14 +288,9 @@ def s3_file_upload(
         "secret": aws_secret_key
     }
 
-    if aws_region is not None:
+    if aws_region:
         storage_options["config_kwargs"] = {
             "region_name": aws_region
-        }
-
-    if endpoint_url and "s3.hicloud.net.tw" in endpoint_url:
-        storage_options["config_kwargs"] = {
-            "region_name": "us-east-1"
         }
 
     if not target_s3_dirpath.startswith("s3://") or not target_s3_dirpath.endswith("/"):
