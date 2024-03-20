@@ -279,6 +279,8 @@ def s3_file_upload(
         List of zip files in bucket or None in case of access error
 
     """
+    if not endpoint_url:
+        endpoint_url = None
     storage_options = {
         "protocol": "s3",
         "endpoint_url": endpoint_url,
