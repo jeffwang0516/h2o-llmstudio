@@ -1788,6 +1788,12 @@ def start_experiment(cfg: Any, q: Q, pre: str, gpu_list: Optional[List] = None) 
                 "S3_SECRET": q.client["default_aws_secret_key"],
             }
         )
+    if q.client["default_aws_region"]:
+        env_vars.update(
+            {
+                "S3_REGION": q.client["default_aws_region"]
+            }
+        )
     env_vars = {k: v or "" for k, v in env_vars.items()}
 
     cfg = copy_config(cfg, q)

@@ -66,9 +66,9 @@ from llm_studio.src.utils.utils import kill_ddp_processes, set_environment, set_
 
 logger = logging.getLogger(__name__)
 
-S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "http://127.0.0.1:32627")
-S3_ACCESSKEY = os.environ.get("S3_ACCESSKEY", "minioadmin")
-S3_SECRET = os.environ.get("S3_SECRET", "minioadmin")
+S3_ENDPOINT = os.environ.get("S3_ENDPOINT")
+S3_ACCESSKEY = os.environ.get("S3_ACCESSKEY")
+S3_SECRET = os.environ.get("S3_SECRET")
 S3_REGION = os.environ.get("S3_REGION", "us-east-1")
 
 
@@ -446,6 +446,10 @@ def run(cfg: Any) -> None:
 
     # check if llm_backbone from s3://
     if cfg.llm_backbone.startswith("s3://"):
+        if not S3_ENDPOINT:
+            S3_ENDPOINT = None
+        if not S3_REGION:
+            S3_REGION = None
         logger.info(
             f"Loading model from {cfg.llm_backbone} "
             f"endpoint_url: {S3_ENDPOINT} "
@@ -456,7 +460,6 @@ def run(cfg: Any) -> None:
             "endpoint_url": S3_ENDPOINT,
             "key": S3_ACCESSKEY,
             "secret": S3_SECRET,
-            "use_ssl": False,
             "config_kwargs": {
                 "region_name": S3_REGION
             }
