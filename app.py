@@ -5,7 +5,7 @@ from llm_studio.app_utils.sections.chat_update import is_app_blocked_while_strea
 from llm_studio.src.utils.logging_utils import initialize_logging
 
 os.environ["MKL_THREADING_LAYER"] = "GNU"
-APP_BASE_PATH = os.environ.get("APP_BASE_PATH", "/")
+APP_BASE_PATH = os.path.join("/", os.environ.get("APP_BASE_PATH", ""))
 
 from h2o_wave import Q, app, copy_expando, main, ui  # noqa: F401
 
