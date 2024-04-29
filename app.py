@@ -5,6 +5,7 @@ from llm_studio.app_utils.sections.chat_update import is_app_blocked_while_strea
 from llm_studio.src.utils.logging_utils import initialize_logging
 
 os.environ["MKL_THREADING_LAYER"] = "GNU"
+APP_BASE_PATH = os.environ.get("APP_BASE_PATH", "/")
 
 from h2o_wave import Q, app, copy_expando, main, ui  # noqa: F401
 
@@ -20,7 +21,7 @@ def on_startup():
     logger.info("STARTING APP")
 
 
-@app("/", on_startup=on_startup)
+@app(APP_BASE_PATH, on_startup=on_startup)
 async def serve(q: Q):
     """Serving function."""
 
